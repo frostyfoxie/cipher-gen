@@ -2,26 +2,121 @@
 <html>
 <head>
     <title>Polygon Key Generator</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
-    <h1>Polygon Numeric Key Generator</h1>
-    <form method="POST" action="/">
-        <label>Number of polygon sides (n): </label>
-        <input type="number" name="n" required><br><br>
-        <label>Seed value (m): </label>
-        <input type="number" name="m" required><br><br>
-        <label>Centroid index (k): </label>
-        <input type="number" name="k" required><br><br>
-        <button type="submit">Generate Key</button>
-    </form>
-    
-    {% if password %}
-        <h2>Numeric Key: {{ password }}</h2>
-    {% endif %}
-    
-    {% if plot_path %}
-        <h3>Polygon Plot:</h3>
-        <img src="{{ plot_path }}" alt="Polygon Plot">
-    {% endif %}
+<h1>Polygon Numeric Key Generator</h1>
+
+<label>Number of polygon sides (n): </label>
+<input type="number" id="n" value="5"><br><br>
+
+<label>Seed value (m): </label>
+<input type="number" id="m" value="103"><br><br>
+
+<label>Centroid index (k): </label>
+<input type="number" id="k" value="1"><br><br>
+
+<button onclick="generateKey()">Generate Key</button>
+
+<h2 id="password"></h2>
+<div id="plot" style="width:700px;height:700px;"></div>
+
+<script>
+function random(seed) {
+    var x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+}
+
+function generatePolygon(n, radius, seed) {
+    let points = [];
+    for (let i = 0; i < n; i++) {
+        points.push([
+            (random(seed+i)*2 - 1) * radius,
+            (random(seed+n+i)*2 - 1) * radius
+        ]);
+    }
+    return points;
+}
+
+function triangleCentroid(tri) {
+    let x = (tri[0][0]+tri[1][0]+tri[2][0])/3;
+    let y = (tri[0][1]+tri[1][1]+tri[2][1])/3;
+    return [x, y];
+}
+
+function combinations(arr, k) {
+    let result = [];
+    function helper(start, comb) {
+        if (comb.length === k) {
+            result.push(comb.slice());
+            return;
+        }
+        for (let i=start;i<arr.length;i++){
+            comb.push(arr[i]);
+            helper(i+1, comb);
+            comb.pop();
+        }
+    }
+    helper(0, []);
+    return result;
+}
+
+function generateCentroids(polygon) {
+    let lvl1 = combinations(polygon, 3).map(triangleCentroid);
+    let lvl2 = combinations(lvl1,3).map(triangleCentroid);
+    return {lvl2: lvl2, lvl1: lvl1};
+}
+
+function sampleTriangles(triangles, maxSample=600) {
+    if(triangles.length <= maxSample) return triangles;
+    let sampled = [];
+    while(sampled.length < maxSample){
+        let idx = Math.floor(Math.random()*triangles.length);
+        sampled.push(triangles[idx]);
+    }
+    return sampled;
+}
+
+function generateKey(){
+    let n = parseInt(document.getElementById("n").value);
+    let m = parseInt(document.getElementById("m").value);
+    let k = parseInt(document.getElementById("k").value);
+    let radius = 5000;
+
+    let polygon = generatePolygon(n, radius, m);
+    let centroids = generateCentroids(polygon);
+    let lvl2 = centroids.lvl2;
+
+    if(k<1 || k>lvl2.length){
+        alert("k out of range");
+        return;
+    }
+
+    let x = lvl2[k-1][0];
+    let y = lvl2[k-1][1];
+    let password = parseInt((x+y).toString().replace('.','').replace('-',''));
+    document.getElementById("password").innerText = "Numeric Key: "+password;
+
+    // Plot polygon and sampled lvl2 triangles
+    let tracePoly = {
+        x: polygon.map(p=>p[0]).concat([polygon[0][0]]),
+        y: polygon.map(p=>p[1]).concat([polygon[0][1]]),
+        mode: 'lines+markers',
+        name: 'Polygon',
+        line: {color: 'blue'}
+    };
+
+    let sampledLvl2 = sampleTriangles(combinations(centroids.lvl1,3), 600).map(tri=>tri.map(p=>p[0]));
+    let traceCentroids = {
+        x: lvl2.map(p=>p[0]),
+        y: lvl2.map(p=>p[1]),
+        mode: 'markers',
+        name: 'Level 2 Centroids',
+        marker: {color:'orange', size:6}
+    };
+
+    Plotly.newPlot('plot', [tracePoly, traceCentroids]);
+}
+</script>
 </body>
 </html>
