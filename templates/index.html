@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Polygon Key Generator</title>
+</head>
+<body>
+    <h1>Polygon Numeric Key Generator</h1>
+    <form method="POST">
+        <label>Number of polygon sides (n): </label>
+        <input type="number" name="n" required><br><br>
+        <label>Seed value (m): </label>
+        <input type="number" name="m" required><br><br>
+        <label>Centroid index (k): </label>
+        <input type="number" name="k" required><br><br>
+        <button type="submit">Generate Key</button>
+    </form>
+    
+    {% if password %}
+        <h2>Numeric Key: {{ password }}</h2>
+    {% endif %}
+    
+    {% if plot_path %}
+        <h3>Polygon Plot:</h3>
+        <img src="{{ plot_path }}" alt="Polygon Plot">
+    {% endif %}
+</body>
+</html>
