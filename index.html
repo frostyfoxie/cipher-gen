@@ -338,24 +338,32 @@
         
         <div class="info-box">
             <div class="info-title">About Cryptographic Ciphers</div>
-            <p>A cipher is an algorithm for performing encryption or decryption—a series of well-defined steps that can be followed to transform information. This polygon cipher uses geometric transformations to create a unique mapping from input parameters to a numeric key, making it a form of deterministic pseudo-random number generation.</p>
+            <p>Imagine you have a special box where you can put messages. You don’t want anyone else to read them, so you use a magic key that changes the letters into funny shapes or numbers. This is called a cipher.
+For example, if you want to write “CAT,” the magic key might turn it into “DBU.” Only someone with the same key can turn “DBU” back into “CAT.”
+So, ciphering is just a way to play a secret writing game. You change your words so only your friends with the magic key can understand them. It’s like having a secret treasure map that only you and your friends can read!</p>
         </div>
         
         <div class="step">
             <h3><span class="step-number">1</span>Step 1: The Base Polygon</h3>
-            <p>A polygon with <strong>n</strong> sides is generated using a pseudo-random number generator seeded with <strong>m</strong>. The vertices are scattered randomly within a circle, creating a unique shape for each seed value. The random function uses a sine-based algorithm that produces consistent results for the same seed.</p><strong>fun fact: you can use the generated key as a password too...just remember the value of (n,m,k)</strong>
+            <p>We pick a number, let’s say 5, and draw 5 dots on the paper.
+
+Connect the dots, and now you have a 5-sided shape (a polygon).
+                
+            <strong>m</strong>. Then scatter the points by a distance of say m.</p><strong>fun fact: you can use the generated key as a password too...just remember the value of (n,m,k)</strong>
             <div class="plot-small" id="plot-step1"></div>
         </div>
         
         <div class="step">
             <h3><span class="step-number">2</span>Step 2: Level 1 Centroids</h3>
-            <p>We find every possible combination of three vertices from the base polygon to form triangles. For each of these triangles, we calculate its centroid (the point where the three medians intersect), creating a new set of points called <strong>Level 1 centroids</strong>. The number of Level 1 centroids is C(n, 3) = n!/(3!(n-3)!).</p>
+            <p>Then take any 3 dots from the shape and make a triangle.Do this for all possible groups of 3 dots. For each triangle, we find the center point (called a centroid).
+                This is like putting a tiny dot in the exact middle of each triangle.
+                <strong>Level 1 dots(centroids)</strong>. The number of Level 1 centroids is C(n, 3) = n!/(3!(n-3)!).</p>
             <div class="plot-small" id="plot-step2"></div>
         </div>
         
         <div class="step">
             <h3><span class="step-number">3</span>Step 3: Level 2 Centroids</h3>
-            <p>The process is repeated. We take all possible combinations of three <strong>Level 1 centroids</strong> to form new triangles and then calculate the centroid of each one. These are the <strong>Level 2 centroids</strong>. The number of Level 2 centroids is C(C(n, 3), 3), which grows very rapidly as n increases.</p>
+            <p>Take any 3 middle dots and make new triangles. Find the centeroid of these new triangles.<strong>Level 2 triangles</strong> and then draw the centroid of each one. These are the <strong>Level 2 centroids</strong>. The number of Level 2 centroids is C(C(n, 3), 3), which grows very rapidly as n increases.</p>
             <div class="plot-small" id="plot-step3"></div>
         </div>
         
