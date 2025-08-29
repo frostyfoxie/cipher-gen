@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Polygon Numeric Key Generator</title>
+    <title>Cipher Key Generator</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
@@ -212,7 +212,7 @@
         }
         
         .plot-small {
-            height: 350px;
+            height: 450px;
             width: 100%;
             border-radius: 0.75rem;
             overflow: hidden;
@@ -343,7 +343,7 @@
         
         <div class="step">
             <h3><span class="step-number">1</span>Step 1: The Base Polygon</h3>
-            <p>A polygon with <strong>n</strong> sides is generated using a pseudo-random number generator seeded with <strong>m</strong>. The vertices are scattered randomly within a circle, creating a unique shape for each seed value. The random function uses a sine-based algorithm that produces consistent results for the same seed.</p>
+            <p>A polygon with <strong>n</strong> sides is generated using a pseudo-random number generator seeded with <strong>m</strong>. The vertices are scattered randomly within a circle, creating a unique shape for each seed value. The random function uses a sine-based algorithm that produces consistent results for the same seed.</p><strong>fun fact: you can use the generated key as a password too...just remember the value of (n,m,k)</strong>
             <div class="plot-small" id="plot-step1"></div>
         </div>
         
