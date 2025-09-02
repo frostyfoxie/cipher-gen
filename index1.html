@@ -586,11 +586,9 @@
             const yStr = selectedCentroid.y.toFixed(6).replace('.', '');
             
             // Combine and shuffle to create the final key (8-14 characters)
-            const combined = (xStr + yStr).replace(/^0+/, '');
+            const key = (xStr + yStr).replace(/^0+/, '');
             }
             
-            // Ensure key length is between 8-14 characters
-            const key = toString(combined);
             
             // Animate progress
             let progress = 0;
