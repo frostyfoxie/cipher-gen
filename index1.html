@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometric Cipher Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            min-height: 100vh;
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .card:hover {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+        
+        .cipher-visualization {
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border-radius: 12px;
+        }
+        
+        .key-digit {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            margin: 0.1rem;
+            border-radius: 4px;
+            background-color: #3b82f6;
+            color: white;
+            font-weight: 600;
+            animation: popIn 0.3s ease-out;
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: #3b82f6;
+            color: white;
+            font-weight: bold;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .polygon-node {
+            fill: #3b82f6;
+            stroke: #1d4ed8;
+            stroke-width: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .polygon-node:hover {
+            fill: #2563eb;
+            r: 10;
+        }
+        
+        .centroid-node {
+            fill: #10b981;
+            stroke: #047857;
+            stroke-width: 2;
+        }
+        
+        .level2-node {
+            fill: #8b5cf6;
+            stroke: #7c3aed;
+            stroke-width: 2;
+        }
+        
+        .selected-node {
+            fill: #ef4444;
+            stroke: #dc2626;
+            stroke-width: 3;
+            r: 8;
+        }
+        
+        .polygon-line {
+            stroke: #3b82f6;
+            stroke-width: 2;
+        }
+        
+        .triangle-line {
+            stroke: #10b981;
+            stroke-width: 1.5;
+            stroke-dasharray: 3,3;
+        }
+        
+        .level2-line {
+            stroke: #8b5cf6;
+            stroke-width: 1;
+            stroke-dasharray: 2,2;
+            opacity: 0.6;
+        }
+        
+        .centroid-line {
+            stroke: #ef4444;
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+        }
+        
+        .visualization-controls {
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+        }
+        
+        .explanation-box {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-left: 4px solid #0ea5e9;
+        }
+        
+        .cipher-demo {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-left: 4px solid #22c55e;
+        }
+        
+        .visualization-tab {
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .visualization-tab.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-8 px-4">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Geometric Cipher Explorer</h1>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Discover how mathematics and geometry can create secure encryption keys through polygon centroid calculations.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <!-- Controls Panel -->
+            <div class="bg-white rounded-xl card p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Cipher Configuration</h2>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Polygon Sides (n)</label>
+                        <div class="flex items-center">
+                            <input type="range" min="3" max="8" value="5" class="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer" id="n-slider">
+                            <span class="ml-4 text-lg font-semibold text-blue-600 w-8" id="n-value">5</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">More sides create more complex ciphers but require more computation</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Seed Value (m)</label>
+                        <input type="number" min="1" value="1083" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="m-input">
+                        <p class="text-sm text-gray-500 mt-2">Changes the shape of the polygon for different keys</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Centroid Index (k)</label>
+                        <input type="number" min="1" value="1" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="k-input">
+                        <p class="text-sm text-gray-500 mt-2">Selects which centroid to use for the final key</p>
+                    </div>
+                    
+                    <button id="generate-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 transform hover:-translate-y-1">
+                        Generate Cipher Key
+                    </button>
+                </div>
+                
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Generated Key</h3>
+                    <div class="bg-gray-50 p-4 rounded-lg min-h-20 flex items-center justify-center" id="key-display">
+                        <p class="text-gray-500 text-center">Your cipher key will appear here</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Visualization -->
+            <div class="bg-white rounded-xl card p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Cipher Visualization</h2>
+                
+                <div class="flex space-x-2 mb-4">
+                    <div class="visualization-tab active" data-tab="original">Original Polygon</div>
+                    <div class="visualization-tab" data-tab="level1">Level 1 Centroids</div>
+                    <div class="visualization-tab" data-tab="level2">Level 2 Centroids</div>
+                </div>
+                
+                <div class="cipher-visualization p-4 rounded-xl h-96 flex items-center justify-center" id="visualization">
+                    <div class="text-center text-gray-500">
+                        <i class="fas fa-project-diagram text-4xl mb-3 text-blue-200"></i>
+                        <p>Visualization will appear here</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700">Calculation Progress</span>
+                        <span class="text-sm text-gray-500" id="progress-text">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="progress-bar bg-blue-600 h-2.5 rounded-full" style="width: 0%" id="progress-bar"></div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 grid grid-cols-3 gap-4 text-center">
+                    <div class="p-3 bg-blue-50 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600" id="level1-count">0</div>
+                        <div class="text-sm text-gray-600">Level 1 Centroids</div>
+                    </div>
+                    <div class="p-3 bg-green-50 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600" id="level2-count">0</div>
+                        <div class="text-sm text-gray-600">Level 2 Centroids</div>
+                    </div>
+                    <div class="p-3 bg-purple-50 rounded-lg">
+                        <div class="text-2xl font-bold text-purple-600" id="key-length">0</div>
+                        <div class="text-sm text-gray-600">Key Length</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- What is Ciphering Section -->
+        <div class="bg-white rounded-xl card p-6 mb-12">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">What is Ciphering?</h2>
+            
+            <div class="explanation-box p-6 rounded-lg mb-8">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Turning Messages into Secret Codes</h3>
+                <p class="text-gray-700 mb-4">
+                    A cipher is a method of transforming information to conceal its meaning and keep it secret. 
+                    It's like a secret code that only people with the right key can understand!
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">How Ciphers Work:</h4>
+                        <ul class="list-disc pl-5 text-gray-700 space-y-2">
+                            <li>You start with a message (called "plaintext")</li>
+                            <li>You apply a cipher algorithm with a key</li>
+                            <li>You get a secret message (called "ciphertext")</li>
+                            <li>Only someone with the right key can decipher it</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="cipher-demo p-4 rounded-lg">
+                        <h4 class="font-semibold text-gray-800 mb-2">Simple Example:</h4>
+                        <p class="text-gray-700 mb-2">Original: HELLO</p>
+                        <p class="text-gray-700 mb-2">Key: Shift each letter by 3 positions</p>
+                        <p class="text-gray-700">Encrypted: KHOOR</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">How Geometric Ciphers Work</h3>
+                
+                <div class="space-y-8">
+                    <div class="flex items-start">
+                        <div class="step-icon">1</div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-800 mb-2">Creating the Base Polygon</h4>
+                            <p class="text-gray-600">We start with a polygon with <span class="font-medium" id="edu-n">5</span> sides. The seed value <span class="font-medium" id="edu-m">1083</span> determines the exact shape of this polygon. Each vertex is placed at a pseudo-random position based on this seed.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="step-icon">2</div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-800 mb-2">First Level Centroids</h4>
+                            <p class="text-gray-600">We form all possible triangles from the polygon's vertices. For each triangle, we calculate its centroid (the point where the three medians intersect). This gives us <span class="font-medium" id="edu-l1">10</span> Level 1 centroids.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="step-icon">3</div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-800 mb-2">Second Level Centroids</h4>
+                            <p class="text-gray-600">Now we form triangles from the Level 1 centroids and calculate their centroids. This creates <span class="font-medium" id="edu-l2">120</span> Level 2 centroids. We select the <span class="font-medium" id="edu-k">1st</span> centroid from this set.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="step-icon">4</div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-gray-800 mb-2">Creating the Numeric Key</h4>
+                            <p class="text-gray-600">The coordinates of the selected centroid are combined into a large number by removing the decimal point. This creates a unique numeric key that can be used for encryption.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- How Ciphers Are Used Section -->
+        <div class="bg-white rounded-xl card p-6 mb-12">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">How Ciphers Are Used</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Real-World Applications</h3>
+                    
+                    <div class="space-y-6">
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-4 flex-shrink-0">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">Secure Communication</h4>
+                                <p class="text-gray-600">Ciphers protect messages sent over the internet, like emails and instant messages.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-4 flex-shrink-0">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">Online Payments</h4>
+                                <p class="text-gray-600">Encryption keeps your credit card information safe when shopping online.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-4 flex-shrink-0">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">Mobile Communications</h4>
+                                <p class="text-gray-600">Your phone calls and texts are encrypted to prevent eavesdropping.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Why Geometric Ciphers?</h3>
+                    
+                    <div class="bg-blue-50 p-5 rounded-lg">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                <i class="fas fa-snowflake"></i>
+                            </div>
+                            <h4 class="ml-3 font-semibold text-gray-800">Avalanche Effect</h4>
+                        </div>
+                        <p class="text-gray-600">Tiny changes in the input values (n, m, or k) produce completely different keys, similar to professional cryptographic algorithms.</p>
+                    </div>
+                    
+                    <div class="bg-green-50 p-5 rounded-lg mt-6">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <h4 class="ml-3 font-semibold text-gray-800">Mathematical Foundation</h4>
+                        </div>
+                        <p class="text-gray-600">Geometric ciphers demonstrate how mathematical concepts can be applied to create secure encryption methods.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Security Information -->
+        <div class="bg-white rounded-xl card p-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">Security Properties</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-blue-50 p-5 rounded-lg">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <h3 class="ml-3 font-semibold text-gray-800">Key Space Size</h3>
+                    </div>
+                    <p class="text-gray-600">The number of possible keys depends on the polygon sides (n). For n=<span id="keyspace-n">5</span>, there are <span id="keyspace-size">120</span> possible Level 2 centroids to choose from.</p>
+                </div>
+                
+                <div class="bg-yellow-50 p-5 rounded-lg">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3 class="ml-3 font-semibold text-gray-800">Computational Security</h3>
+                    </div>
+                    <p class="text-gray-600">The number of calculations grows rapidly with more polygon sides, making brute-force attacks difficult for larger values of n.</p>
+                </div>
+                
+                <div class="bg-green-50 p-5 rounded-lg">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <h3 class="ml-3 font-semibold text-gray-800">Educational Value</h3>
+                    </div>
+                    <p class="text-gray-600">This cipher demonstrates how mathematical concepts can be applied to cryptography, helping students understand fundamental security principles.</p>
+                </div>
+                
+                <div class="bg-purple-50 p-5 rounded-lg">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                            <i class="fas fa-puzzle-piece"></i>
+                        </div>
+                        <h3 class="ml-3 font-semibold text-gray-800">Pattern Recognition</h3>
+                    </div>
+                    <p class="text-gray-600">Geometric ciphers help develop pattern recognition skills, which are fundamental to understanding more complex encryption methods.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const nSlider = document.getElementById('n-slider');
+        const nValue = document.getElementById('n-value');
+        const mInput = document.getElementById('m-input');
+        const kInput = document.getElementById('k-input');
+        const generateBtn = document.getElementById('generate-btn');
+        const keyDisplay = document.getElementById('key-display');
+        const visualization = document.getElementById('visualization');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const level1Count = document.getElementById('level1-count');
+        const level2Count = document.getElementById('level2-count');
+        const keyLength = document.getElementById('key-length');
+        const visualizationTabs = document.querySelectorAll('.visualization-tab');
+        
+        // Educational elements
+        const eduN = document.getElementById('edu-n');
+        const eduM = document.getElementById('edu-m');
+        const eduK = document.getElementById('edu-k');
+        const eduL1 = document.getElementById('edu-l1');
+        const eduL2 = document.getElementById('edu-l2');
+        const keyspaceN = document.getElementById('keyspace-n');
+        const keyspaceSize = document.getElementById('keyspace-size');
+        
+        // Visualization state
+        let currentTab = 'original';
+        let originalPoints = [];
+        let level1Centroids = [];
+        let level2Centroids = [];
+        let selectedCentroid = null;
+        
+        // Update n value when slider changes
+        nSlider.addEventListener('input', () => {
+            nValue.textContent = nSlider.value;
+            eduN.textContent = nSlider.value;
+            keyspaceN.textContent = nSlider.value;
+            updateKeySpaceSize();
+        });
+        
+        // Update educational content when inputs change
+        mInput.addEventListener('input', () => {
+            eduM.textContent = mInput.value;
+        });
+        
+        kInput.addEventListener('input', () => {
+            eduK.textContent = kInput.value + (kInput.value.endsWith('1') ? 'st' : 
+                              kInput.value.endsWith('2') ? 'nd' : 
+                              kInput.value.endsWith('3') ? 'rd' : 'th');
+        });
+        
+        // Visualization tabs
+        visualizationTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                visualizationTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentTab = tab.dataset.tab;
+                updateVisualization();
+            });
+        });
+        
+        // Calculate key space size based on n
+        function updateKeySpaceSize() {
+            const n = parseInt(nSlider.value);
+            const l1 = combinations(n, 3);
+            const l2 = combinations(l1, 3);
+            
+            eduL1.textContent = l1;
+            eduL2.textContent = l2;
+            keyspaceSize.textContent = l2;
+        }
+        
+        // Combinations function
+        function combinations(n, k) {
+            if (k > n) return 0;
+            if (k === 0 || k === n) return 1;
+            
+            let result = 1;
+            for (let i = 1; i <= k; i++) {
+                result = result * (n - k + i) / i;
+            }
+            return result;
+        }
+        
+        // Initialize key space size
+        updateKeySpaceSize();
+        
+        // Generate key button handler
+        generateBtn.addEventListener('click', () => {
+            const n = parseInt(nSlider.value);
+            const m = parseInt(mInput.value);
+            const k = parseInt(kInput.value);
+            
+            // Update educational content
+            eduN.textContent = n;
+            eduM.textContent = m;
+            eduK.textContent = k + (k === 1 ? 'st' : k === 2 ? 'nd' : k === 3 ? 'rd' : 'th');
+            
+            // Generate the key
+            generateKey(n, m, k);
+        });
+        
+        // Generate the actual key based on geometric calculations
+        function generateKey(n, m, k) {
+            // Reset UI
+            keyDisplay.innerHTML = '<div class="animate-pulse flex space-x-4"><div class="flex-1 space-y-2 py-1"><div class="h-4 bg-gray-300 rounded w-3/4"></div><div class="h-4 bg-gray-300 rounded"></div></div></div>';
+            
+            // Calculate counts for UI
+            const l1Count = combinations(n, 3);
+            const l2Count = combinations(l1Count, 3);
+            
+            level1Count.textContent = l1Count;
+            level2Count.textContent = l2Count;
+            
+            // Generate original polygon points
+            originalPoints = generateOriginalPoints(n, m);
+            
+            // Calculate Level 1 centroids (from triangles of original points)
+            level1Centroids = [];
+            for (let i = 0; i < n - 2; i++) {
+                for (let j = i + 1; j < n - 1; j++) {
+                    for (let l = j + 1; l < n; l++) {
+                        const centroid = calculateCentroid(
+                            originalPoints[i], 
+                            originalPoints[j], 
+                            originalPoints[l]
+                        );
+                        level1Centroids.push(centroid);
+                    }
+                }
+            }
+            
+            // Calculate Level 2 centroids (from triangles of Level 1 centroids)
+            level2Centroids = [];
+            const totalL1 = level1Centroids.length;
+            for (let i = 0; i < totalL1 - 2; i++) {
+                for (let j = i + 1; j < totalL1 - 1; j++) {
+                    for (let l = j + 1; l < totalL1; l++) {
+                        const centroid = calculateCentroid(
+                            level1Centroids[i], 
+                            level1Centroids[j], 
+                            level1Centroids[l]
+                        );
+                        level2Centroids.push(centroid);
+                    }
+                }
+            }
+            
+            // Select the k-th centroid (with bounds checking)
+            const selectedIndex = Math.min(k - 1, level2Centroids.length - 1);
+            selectedCentroid = level2Centroids[selectedIndex];
+            
+            // Create the key from the centroid coordinates
+            const xStr = selectedCentroid.x.toFixed(6).replace('.', '');
+            const yStr = selectedCentroid.y.toFixed(6).replace('.', '');
+            
+            // Combine and shuffle to create the final key (8-14 characters)
+            let combined = (xStr + yStr).replace(/^0+/, '');
+            if (combined.length < 8) {
+                // Pad if too short
+                combined += Math.abs(m).toString().substring(0, 8 - combined.length);
+            }
+            
+            // Ensure key length is between 8-14 characters
+            const key = shuffleString(combined).substring(0, 8 + (m % 7));
+            
+            // Animate progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 2;
+                if (progress <= 30) {
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${progress}% - Generating polygon`;
+                } else if (progress <= 70) {
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${progress}% - Calculating Level 1 centroids`;
+                } else if (progress <= 90) {
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${progress}% - Calculating Level 2 centroids`;
+                } else if (progress < 100) {
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${progress}% - Finalizing key`;
+                } else {
+                    clearInterval(interval);
+                    
+                    // Display the key with animation
+                    displayKeyWithAnimation(key);
+                    
+                    progressBar.style.width = "100%";
+                    progressText.textContent = "100% - Complete";
+                    
+                    // Update visualization
+                    updateVisualization();
+                }
+            }, 50);
+        }
+        
+        // Generate original polygon points based on n and m
+        function generateOriginalPoints(n, m) {
+            const points = [];
+            const centerX = 200;
+            const centerY = 200;
+            const baseRadius = 80;
+            
+            // Use m to create a pseudo-random but deterministic shape
+            const seed = m % 1000;
+            
+            for (let i = 0; i < n; i++) {
+                const angle = 2 * Math.PI * i / n;
+                // Add some variation based on seed to make it irregular
+                const radius = baseRadius + (seed % 20) * Math.sin(angle * 3 + seed * 0.1);
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                points.push({ x, y });
+            }
+            
+            return points;
+        }
+        
+        // Calculate centroid of three points
+        function calculateCentroid(p1, p2, p3) {
+            return {
+                x: (p1.x + p2.x + p3.x) / 3,
+                y: (p1.y + p2.y + p3.y) / 3
+            };
+        }
+        
+        // Shuffle a string
+        function shuffleString(str) {
+            const arr = str.split('');
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr.join('');
+        }
+        
+        // Display key with animation
+        function displayKeyWithAnimation(key) {
+            keyDisplay.innerHTML = '';
+            keyLength.textContent = key.length;
+            
+            // Split into chunks of 4 for better readability
+            for (let i = 0; i < key.length; i += 4) {
+                const chunk = key.substring(i, i + 4);
+                const chunkDiv = document.createElement('div');
+                chunkDiv.className = 'flex justify-center mb-2';
+                
+                for (let j = 0; j < chunk.length; j++) {
+                    const digitSpan = document.createElement('span');
+                    digitSpan.className = 'key-digit';
+                    digitSpan.textContent = chunk[j];
+                    digitSpan.style.animationDelay = `${(i + j) * 0.1}s`;
+                    chunkDiv.appendChild(digitSpan);
+                }
+                
+                keyDisplay.appendChild(chunkDiv);
+            }
+        }
+        
+        // Update visualization based on current tab
+        function updateVisualization() {
+            if (currentTab === 'original') {
+                showOriginalPolygon();
+            } else if (currentTab === 'level1') {
+                showLevel1Centroids();
+            } else if (currentTab === 'level2') {
+                showLevel2Centroids();
+            }
+        }
+        
+        // Show original polygon with a sample triangle and centroid
+        function showOriginalPolygon() {
+            if (!originalPoints.length) return;
+            
+            let svgContent = `
+                <svg width="100%" height="100%" viewBox="0 0 400 400">
+                    <!-- Base polygon -->
+                    <polygon points="${originalPoints.map(p => `${p.x},${p.y}`).join(' ')}" 
+                             fill="rgba(59, 130, 246, 0.1)" stroke="#3b82f6" stroke-width="2" />
+            `;
+            
+            // Add vertices
+            originalPoints.forEach((point, i) => {
+                svgContent += `
+                    <circle cx="${point.x}" cy="${point.y}" r="6" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2">
+                        <title>Vertex ${i+1}</title>
+                    </circle>
+                `;
+            });
+            
+            // Show a sample triangle (first three points)
+            if (originalPoints.length >= 3) {
+                svgContent += `
+                    <polygon points="${originalPoints[0].x},${originalPoints[0].y} ${originalPoints[1].x},${originalPoints[1].y} ${originalPoints[2].x},${originalPoints[2].y}" 
+                             fill="rgba(16, 185, 129, 0.1)" stroke="#10b981" stroke-width="2" stroke-dasharray="4,4" />
+                `;
+                
+                // Calculate and show centroid of this triangle
+                const centroid = calculateCentroid(originalPoints[0], originalPoints[1], originalPoints[2]);
+                svgContent += `
+                    <circle cx="${centroid.x}" cy="${centroid.y}" r="6" fill="#10b981" stroke="#047857" stroke-width="2">
+                        <title>Centroid of triangle (1,2,3)</title>
+                    </circle>
+                    
+                    <!-- Lines from vertices to centroid -->
+                    <line x1="${originalPoints[0].x}" y1="${originalPoints[0].y}" x2="${centroid.x}" y2="${centroid.y}" 
+                          stroke="#10b981" stroke-width="1" stroke-dasharray="2,2" opacity="0.6" />
+                    <line x1="${originalPoints[1].x}" y1="${originalPoints[1].y}" x2="${centroid.x}" y2="${centroid.y}" 
+                          stroke="#10b981" stroke-width="1" stroke-dasharray="2,2" opacity="0.6" />
+                    <line x1="${originalPoints[2].x}" y1="${originalPoints[2].y}" x2="${centroid.x}" y2="${centroid.y}" 
+                          stroke="#10b981" stroke-width="1" stroke-dasharray="2,2" opacity="0.6" />
+                `;
+            }
+            
+            svgContent += `</svg>`;
+            visualization.innerHTML = svgContent;
+        }
+        
+        // Show Level 1 centroids with a sample triangle and centroid
+        function showLevel1Centroids() {
+            if (!level1Centroids.length) return;
+            
+            let svgContent = `
+                <svg width="100%" height="100%" viewBox="0 0 400 400">
+                    <!-- Background showing original polygon faintly -->
+                    <polygon points="${originalPoints.map(p => `${p.x},${p.y}`).join(' ')}" 
+                             fill="rgba(59, 130, 246, 0.05)" stroke="#3b82f6" stroke-width="1" opacity="0.3" />
+            `;
+            
+            // Add Level 1 centroids
+            level1Centroids.forEach((point, i) => {
+                svgContent += `
+                    <circle cx="${point.x}" cy="${point.y}" r="4" fill="#10b981" stroke="#047857" stroke-width="1">
+                        <title>Level 1 Centroid ${i+1}</title>
+                    </circle>
+                `;
+            });
+            
+            // Show a sample triangle (first three centroids)
+            if (level1Centroids.length >= 3) {
+                svgContent += `
+                    <polygon points="${level1Centroids[0].x},${level1Centroids[0].y} ${level1Centroids[1].x},${level1Centroids[1].y} ${level1Centroids[2].x},${level1Centroids[2].y}" 
+                             fill="rgba(139, 92, 246, 0.1)" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="4,4" />
+                `;
+                
+                // Calculate and show centroid of this triangle
+                const centroid = calculateCentroid(level1Centroids[0], level1Centroids[1], level1Centroids[2]);
+                svgContent += `
+                    <circle cx="${centroid.x}" cy="${centroid.y}" r="6" fill="#8b5cf6" stroke="#7c3aed" stroke-width="2">
+                        <title>Centroid of Level 1 triangle (1,2,3)</title>
+                    </circle>
+                    
+                    <!-- Lines from vertices to centroid -->
+                    <line x1="${level1Centroids[0].x}" y1="${level1Centroids[0].y}" x2="${centroid.x}" y2="${centroid.y}" 
+                          stroke="#8b5cf6" stroke-width="1" stroke-dasharray="2,2" opacity="0.6" />
+                    <line x1="${level1Centroids[1].x}" y1="${level1Centroids[1].y}" x2="${centroid.x}" y2="${centroid.y}" 
+                          stroke="#8b5cf6" stroke-width="1" stroke-dasharray="2,2" opacity="0.6" />
+                    <line x1="${level1Centroids[2].x}" y1="${level1Centroids[2].y}" x2="${centroid.x}" y2="${centroid.y}" 
+                          stroke="#8b5cf6" stroke-width="1" stroke-dasharray="2,2" opacity="0.6" />
+                `;
+            }
+            
+            svgContent += `</svg>`;
+            visualization.innerHTML = svgContent;
+        }
+        
+        // Show Level 2 centroids with the selected centroid
+        function showLevel2Centroids() {
+            if (!level2Centroids.length) return;
+            
+            let svgContent = `
+                <svg width="100%" height="100%" viewBox="0 0 400 400">
+                    <!-- Background showing original polygon faintly -->
+                    <polygon points="${originalPoints.map(p => `${p.x},${p.y}`).join(' ')}" 
+                             fill="rgba(59, 130, 246, 0.05)" stroke="#3b82f6" stroke-width="1" opacity="0.2" />
+            `;
+            
+            // Add Level 2 centroids
+            level2Centroids.forEach((point, i) => {
+                const isSelected = selectedCentroid && Math.abs(point.x - selectedCentroid.x) < 0.1 && Math.abs(point.y - selectedCentroid.y) < 0.1;
+                svgContent += `
+                    <circle cx="${point.x}" cy="${point.y}" r="${isSelected ? 6 : 3}" 
+                            fill="${isSelected ? '#ef4444' : '#8b5cf6'}" 
+                            stroke="${isSelected ? '#dc2626' : '#7c3aed'}" 
+                            stroke-width="${isSelected ? 2 : 1}">
+                        <title>Level 2 Centroid ${i+1}${isSelected ? ' (Selected)' : ''}</title>
+                    </circle>
+                `;
+            });
+            
+            // Highlight the selected centroid
+            if (selectedCentroid) {
+                svgContent += `
+                    <circle cx="${selectedCentroid.x}" cy="${selectedCentroid.y}" r="10" 
+                            fill="rgba(239, 68, 68, 0.2)" stroke="#dc2626" stroke-width="2">
+                        <title>Selected Centroid (Key Source)</title>
+                    </circle>
+                `;
+            }
+            
+            svgContent += `</svg>`;
+            visualization.innerHTML = svgContent;
+        }
+        
+        // Initialize with default values
+        window.addEventListener('load', () => {
+            const n = parseInt(nSlider.value);
+            const m = parseInt(mInput.value);
+            const k = parseInt(kInput.value);
+            
+            // Update educational content
+            eduN.textContent = n;
+            eduM.textContent = m;
+            eduK.textContent = k + (k === 1 ? 'st' : k === 2 ? 'nd' : k === 3 ? 'rd' : 'th');
+            
+            // Generate the initial key
+            generateKey(n, m, k);
+        });
+    </script>
+</body>
+</html>
