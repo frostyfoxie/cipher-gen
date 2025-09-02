@@ -587,13 +587,10 @@
             
             // Combine and shuffle to create the final key (8-14 characters)
             let combined = (xStr + yStr).replace(/^0+/, '');
-            if (combined.length < 8) {
-                // Pad if too short
-                combined += Math.abs(m).toString().substring(0, 8 - combined.length);
             }
             
             // Ensure key length is between 8-14 characters
-            const key = shuffleString(combined).substring(0, 8 + (m % 7));
+            const key = shuffleString(combined);
             
             // Animate progress
             let progress = 0;
