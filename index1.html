@@ -582,8 +582,8 @@
             selectedCentroid = level2Centroids[selectedIndex];
             
             // Create the key from the centroid coordinates
-            const xStr = selectedCentroid.x.toFixed(6).replace('.', '');
-            const yStr = selectedCentroid.y.toFixed(6).replace('.', '');
+            const xStr = selectedCentroid.x.toFixed(3).replace('.', '');
+            const yStr = selectedCentroid.y.toFixed(3).replace('.', '');
             
             // Combine and shuffle to create the final key (8-14 characters)
             let combined = (xStr + yStr).replace(/^0+/, '');
